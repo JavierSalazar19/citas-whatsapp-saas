@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Simulador Bot WhatsApp - Micro-SaaS</title>
+  <link rel="stylesheet" href="css/styles.css" />
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+</head>
+<body>
+  <div class="container">
+    <div class="card">
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+        <div>
+          <h1>Simulador de Bot de WhatsApp</h1>
+          <p class="subtitle">Prueba cómo el sistema interactúa con el cliente para confirmar citas.</p>
+        </div>
+        <a href="panel.html" class="btn-primary" style="padding: 8px 16px; text-decoration: none; font-size: 0.9rem; width: auto;">← Volver al Panel</a>
+      </div>
+
+      <!-- Caja de Chat Estilo WhatsApp -->
+      <div style="background: #efeae2; border-radius: 12px; padding: 16px; height: 350px; overflow-y: auto; display: flex; flex-direction: column; gap: 12px; margin-bottom: 16px; border: 1px solid var(--border);" id="chat-mensajes">
+        <!-- Los mensajes se inyectan dinámicamente -->
+      </div>
+
+      <!-- Controles de Simulación -->
+      <div style="display: flex; gap: 10px;">
+        <input type="text" id="input-mensaje" placeholder="Escribe una respuesta (ej. SI, CANCELAR, etc.)..." style="flex: 1;" />
+        <button type="button" class="btn-primary" onclick="enviarMensajeSimulado()" style="width: auto; padding: 0 20px;">Enviar</button>
+      </div>
+      
+      <div style="margin-top: 15px; display: flex; gap: 10px;">
+        <button type="button" class="slot-btn" onclick="simularEnvioRecordatorio()" style="flex: 1; background: #dcfce7; color: var(--success); border-color: #bbf7d0;">📲 Simular Envío de Recordatorio Proactivo</button>
+      </div>
+    </div>
+  </div>
+
+  <script src="js/config.js"></script>
+  <script src="js/whatsapp-bot.js"></script>
+</body>
+</html>

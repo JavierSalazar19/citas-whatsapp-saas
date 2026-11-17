@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Panel del Negocio - Citas</title>
+  <link rel="stylesheet" href="css/styles.css" />
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+</head>
+<body>
+  <div class="container">
+    <div class="card">
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+        <div>
+          <h1 id="panel-titulo">Panel de Citas</h1>
+          <p class="subtitle" id="panel-sub">Administra las reservaciones de tu consultorio.</p>
+        </div>
+        <a href="agendar.html" target="_blank" class="btn-primary" style="padding: 8px 16px; text-decoration: none; font-size: 0.9rem; width: auto;">Ver Link Público ↗</a>
+      </div>
+
+      <div class="form-group">
+        <label for="filtro-fecha">Filtrar por fecha:</label>
+        <input type="date" id="filtro-fecha" style="max-width: 220px;" />
+      </div>
+
+      <div id="citas-container" style="margin-top: 20px;">
+        <p class="subtitle">Cargando citas...</p>
+      </div>
+    </div>
+  </div>
+
+  <script src="js/config.js"></script>
+  <script src="js/panel.js"></script>
+</body>
+</html>
