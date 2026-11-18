@@ -5,10 +5,8 @@
 document.addEventListener('DOMContentLoaded', () => {
   const inputNombre = document.getElementById('negocio-nombre');
   const inputSlug = document.getElementById('negocio-slug');
-  const previewUrl = document.getElementById('preview-url');
   const formRegistro = document.getElementById('form-registro');
 
-  // Generar el slug automáticamente al escribir el nombre del negocio
   if (inputNombre && inputSlug) {
     inputNombre.addEventListener('input', () => {
       const slugGenerado = generarSlug(inputNombre.value);
@@ -31,13 +29,13 @@ document.addEventListener('DOMContentLoaded', () => {
 function generarSlug(texto) {
   return texto
     .toString()
-    .normalize('NFD')                   // Separar acentos
-    .replace(/[\u0300-\u036f]/g, '')    // Eliminar acentos
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
     .toLowerCase()
     .trim()
-    .replace(/[^a-z0-9\s-]/g, '')       // Quitar caracteres especiales
-    .replace(/\s+/g, '-')               // Cambiar espacios por guiones
-    .replace(/-+/g, '-');               // Evitar guiones dobles
+    .replace(/[^a-z0-9\s-]/g, '')
+    .replace(/\s+/g, '-')
+    .replace(/-+/g, '-');
 }
 
 function actualizarPreviewUrl(slug) {
@@ -83,13 +81,14 @@ async function registrarNuevoNegocio(e) {
       return;
     }
 
-    // 2. Insertar el nuevo negocio en la tabla 'negocios'
+    // 2. Insertar el nuevo negocio incluyendo un owner_user_id por defecto para cumplir con la BD
     const { data: nuevoNegocio, error: errorNegocio } = await supabaseClient
       .from('negocios')
       .insert([{
         nombre: nombreNegocio,
         slug: slugNegocio,
-        telefono_whatsapp: telefonoNegocio
+        telefono_whatsapp: telefonoNegocio,
+        owner_user_id: '00000000-0000-0000-0000-000000000000' // ID genérico temporal para registro libre
       }])
       .select()
       .single();
@@ -108,7 +107,7 @@ async function registrarNuevoNegocio(e) {
 
     if (errorServicio) throw errorServicio;
 
-    // 4. Mostrar pantalla de éxito con ambos enlaces listos
+    // 4. Mostrar pantalla de éxito
     const baseUrl = window.location.origin;
     const urlAgendar = `${baseUrl}/agendar.html?negocio=${slugNegocio}`;
     const urlPanel = `${baseUrl}/panel.html?negocio=${slugNegocio}`;
@@ -116,13 +115,11 @@ async function registrarNuevoNegocio(e) {
     document.getElementById('form-registro').style.display = 'none';
     const boxResultado = document.getElementById('resultado-registro');
     
-    const linkCliente = document.getElementById('link-cliente');
-    linkCliente.href = urlAgendar;
-    linkCliente.textContent = urlAgendar;
+    document.getElementById('link-cliente').href = urlAgendar;
+    document.getElementById('link-cliente').textContent = urlAgendar;
 
-    const linkAdmin = document.getElementById('link-admin');
-    linkAdmin.href = urlPanel;
-    linkAdmin.textContent = urlPanel;
+    document.getElementById('link-admin').href = urlPanel;
+    document.getElementById('link-admin').textContent = urlPanel;
 
     boxResultado.style.display = 'block';
 
