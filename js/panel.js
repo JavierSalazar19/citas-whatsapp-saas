@@ -1,5 +1,5 @@
 // ==========================================
-// MÓDULO DE PANEL ADMINISTRATIVO MULTI-NEGOCIO
+// MÓDULO DE PANEL ADMINISTRATIVO MULTI-NEGOCIO CON WHATSAPP
 // ==========================================
 
 const urlParamsPanel = new URLSearchParams(window.location.search);
@@ -119,10 +119,11 @@ function renderizarCitas() {
       <p style="margin: 4px 0; color: #475569;">✂️ <strong>Servicio:</strong> ${servicioNombre}</p>
       <p style="margin: 4px 0; color: #475569;">📅 <strong>Fecha y Hora:</strong> ${fechaInicio}</p>
       
-      <div style="display: flex; gap: 8px; margin-top: 12px; border-top: 1px solid #e2e8f0; pt-8px; padding-top: 10px;">
-        <button onclick="actualizarEstado('${cita.id}', 'confirmada')" style="background: #10b981; color: white; border: none; padding: 6px 12px; border-radius: 4px; cursor: pointer; font-size: 0.85rem;">Confirmar</button>
-        <button onclick="actualizarEstado('${cita.id}', 'atendida')" style="background: #3b82f6; color: white; border: none; padding: 6px 12px; border-radius: 4px; cursor: pointer; font-size: 0.85rem;">Atendida</button>
-        <button onclick="actualizarEstado('${cita.id}', 'cancelada')" style="background: #ef4444; color: white; border: none; padding: 6px 12px; border-radius: 4px; cursor: pointer; font-size: 0.85rem;">Cancelar</button>
+      <div style="display: flex; flex-wrap: wrap; gap: 8px; margin-top: 12px; border-top: 1px solid #e2e8f0; padding-top: 10px;">
+        <button onclick="actualizarEstado('${cita.id}', 'confirmada')" style="background: #10b981; color: white; border: none; padding: 6px 10px; border-radius: 4px; cursor: pointer; font-size: 0.82rem;">Confirmar</button>
+        <button onclick="actualizarEstado('${cita.id}', 'atendida')" style="background: #3b82f6; color: white; border: none; padding: 6px 10px; border-radius: 4px; cursor: pointer; font-size: 0.82rem;">Atendida</button>
+        <button onclick="actualizarEstado('${cita.id}', 'cancelada')" style="background: #ef4444; color: white; border: none; padding: 6px 10px; border-radius: 4px; cursor: pointer; font-size: 0.82rem;">Cancelar</button>
+        <button onclick="enviarWhatsApp('${cita.cliente_telefono}', '${cita.cliente_nombre}', '${servicioNombre}', '${fechaInicio}')" style="background: #25d366; color: white; border: none; padding: 6px 12px; border-radius: 4px; cursor: pointer; font-size: 0.85rem; font-weight: bold; margin-left: auto;">💬 Enviar WhatsApp</button>
       </div>
     `;
 
@@ -140,7 +141,18 @@ async function actualizarEstado(citaId, nuevoEstado) {
     console.error('Error al actualizar el estado:', error);
     alert('No se pudo actualizar el estado de la cita.');
   } else {
-    // Recargar las citas en pantalla para reflejar el cambio al instante
     await cargarCitasPanel();
   }
+}
+
+function enviarWhatsApp(telefono, clienteNombre, servicioNombre, fechaInicio) {
+  // Limpiar el teléfono para dejar solo dígitos
+  const telLimpiio = telefono.replace(/\D/g, '');
+  // Asegurar prefijo de México (+52) si son 10 dígitos
+  const numeroCompleto = telLimpiio.length === 10 ? `52${telLimpiio}` : telLimpiio;
+
+  const mensaje = `Hola *${clienteNombre}*, te saludamos de *${negocioActual.nombre}*. Te escribimos para confirmar los detalles de tu cita para *${servicioNombre}* programada para el *${fechaInicio}*. ¡Te esperamos! Por favor avísanos si necesitas algún cambio.`;
+
+  const urlWhatsApp = `https://wa.me/${numeroCompleto}?text=${encodeURIComponent(mensaje)}`;
+  window.open(urlWhatsApp, '_blank');
 }
