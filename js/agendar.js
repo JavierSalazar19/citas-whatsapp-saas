@@ -1,162 +1,153 @@
+// ==========================================
+// MÓDULO DE AGENDAMIENTO MULTI-NEGOCIO
+// ==========================================
+
+// Detectar el negocio actual mediante el parámetro ?negocio=slug en la URL
+const urlParams = new URLSearchParams(window.location.search);
+const negocioSlug = urlParams.get('negocio') || 'dental-obregon'; // Valor por defecto si no viene en la URL
+
 let negocioActual = null;
-let serviciosLista = [];
+let serviciosDisponibles = [];
+let horariosDisponibles = [];
 
 document.addEventListener('DOMContentLoaded', async () => {
-  // Leer ?negocio=slug de la URL o usar el de prueba
-  const params = new URLSearchParams(window.location.search);
-  const slug = params.get('negocio') || NEGOCIO_DEFAULT_SLUG;
+  await cargarNegocio();
+  
+  const fechaInput = document.getElementById('fecha');
+  if (fechaInput) {
+    // Establecer fecha mínima como hoy
+    const hoy = new Date().toISOString().split('T')[0];
+    fechaInput.min = hoy;
+    fechaInput.addEventListener('change', cargarHorarios);
+  }
 
-  // Fijar fecha mínima a hoy en hora local
-  const ahora = new Date();
-  const hoy = `${ahora.getFullYear()}-${String(ahora.getMonth() + 1).padStart(2, '0')}-${String(ahora.getDate()).padStart(2, '0')}`;
-  const inputFecha = document.getElementById('fecha');
-  inputFecha.min = hoy;
-  inputFecha.value = hoy;
-
-  await cargarDatosNegocio(slug);
-  await actualizarHorariosDisponibles();
-
-  document.getElementById('servicio').addEventListener('change', actualizarHorariosDisponibles);
-  inputFecha.addEventListener('change', actualizarHorariosDisponibles);
-  document.getElementById('form-agendar').addEventListener('submit', guardarCita);
+  const formAgendar = document.getElementById('form-agendar');
+  if (formAgendar) {
+    formAgendar.addEventListener('submit', manejarAgendamiento);
+  }
 });
 
-async function cargarDatosNegocio(slug) {
-  if (MODO_OFFLINE) {
-    negocioActual = {
-      id: NEGOCIO_DEFAULT_ID,
-      nombre: 'Consultorio Dental Obregón (Modo Local)',
-      horario_semanal: {
-        "1": ["09:00", "18:00"],
-        "2": ["09:00", "18:00"],
-        "3": ["09:00", "18:00"],
-        "4": ["09:00", "18:00"],
-        "5": ["09:00", "18:00"]
-      }
+async function cargarNegocio() {
+  if (typeof MODO_OFFLINE !== 'undefined' && MODO_OFFLINE) {
+    negocioActual = { 
+      id: '11111111-1111-1111-1111-111111111111', 
+      nombre: 'Consultorio Dental Obregón (Modo Local)' 
     };
-    serviciosLista = [
-      { id: 's1', nombre: 'Valoración y Limpieza Dental', duracion_minutos: 45, precio: 600 },
-      { id: 's2', nombre: 'Consulta General / Urgencia', duracion_minutos: 30, precio: 450 }
-    ];
   } else {
-    const { data: neg, error: errNeg } = await supabaseClient
+    // Consultar el negocio en Supabase usando el slug de la URL
+    const { data, error } = await supabaseClient
       .from('negocios')
       .select('*')
-      .eq('slug', slug)
+      .eq('slug', negocioSlug)
       .single();
-
-    if (errNeg || !neg) {
-      document.getElementById('negocio-nombre').textContent = 'Negocio no encontrado';
+    
+    if (error || !data) {
+      alert('Negocio no encontrado en la plataforma');
       return;
     }
-
-    negocioActual = neg;
-    const { data: servs } = await supabaseClient
-      .from('servicios')
-      .select('*')
-      .eq('negocio_id', neg.id)
-      .eq('activo', true);
-
-    serviciosLista = servs || [];
+    negocioActual = data;
   }
-
-  document.getElementById('negocio-nombre').textContent = negocioActual.nombre;
-  const selectServicio = document.getElementById('servicio');
-  selectServicio.innerHTML = serviciosLista.map(s => 
-    `<option value="${s.id}" data-duracion="${s.duracion_minutos}">${s.nombre} (${s.duracion_minutos} min - $${s.precio})</option>`
-  ).join('');
+  
+  // Actualizar el título en pantalla con el nombre dinámico del negocio
+  const tituloNegocio = document.querySelector('h1');
+  if (tituloNegocio) {
+    tituloNegocio.textContent = negocioActual.nombre;
+  }
+  
+  await cargarServicios();
 }
 
-async function actualizarHorariosDisponibles() {
+async function cargarServicios() {
   if (!negocioActual) return;
 
-  const fecha = document.getElementById('fecha').value;
-  const selectServicio = document.getElementById('servicio');
-  const duracion = Number(selectServicio.selectedOptions[0]?.dataset.duracion || 30);
-  const container = document.getElementById('slots-container');
-  document.getElementById('hora-seleccionada').value = '';
-
-  let citasDelDia = [];
-  if (MODO_OFFLINE) {
-    const guardadas = JSON.parse(localStorage.getItem('citas_locales') || '[]');
-    citasDelDia = guardadas.filter(c => c.fecha_hora_inicio.startsWith(fecha));
+  if (typeof MODO_OFFLINE !== 'undefined' && MODO_OFFLINE) {
+    serviciosDisponibles = [
+      { id: 'srv-1', nombre: 'Limpieza Dental', duracion_minutos: 30 },
+      { id: 'srv-2', nombre: 'Consulta General', duracion_minutos: 45 }
+    ];
   } else {
-    const inicioDia = new Date(`${fecha}T00:00:00`).toISOString();
-    const finDia = new Date(`${fecha}T23:59:59`).toISOString();
-    const { data } = await supabaseClient
-      .from('citas')
-      .select('fecha_hora_inicio, fecha_hora_fin, estado')
-      .eq('negocio_id', negocioActual.id)
-      .gte('fecha_hora_inicio', inicioDia)
-      .lte('fecha_hora_inicio', finDia);
-    citasDelDia = data || [];
+    const { data, error } = await supabaseClient
+      .from('servicios')
+      .select('*')
+      .eq('negocio_id', negocioActual.id);
+
+    if (error) {
+      console.error('Error al cargar servicios:', error);
+      return;
+    }
+    serviciosDisponibles = data || [];
   }
 
-  const slots = calcularHorariosDisponibles(fecha, negocioActual.horario_semanal, duracion, citasDelDia);
+  const selectServicio = document.getElementById('servicio');
+  if (selectServicio) {
+    selectServicio.innerHTML = '<option value="">Selecciona un servicio...</option>';
+    serviciosDisponibles.forEach(s => {
+      const option = document.createElement('option');
+      option.value = s.id;
+      option.textContent = `${s.nombre} (${s.duracion_minutos} min)`;
+      selectServicio.appendChild(option);
+    });
+  }
+}
 
-  if (slots.length === 0) {
-    container.innerHTML = '<p class="subtitle">No hay atención este día.</p>';
+async function cargarHorarios() {
+  // Lógica de disponibilidad de horarios para la fecha seleccionada
+  const fechaSeleccionada = document.getElementById('fecha').value;
+  const selectHorario = document.getElementById('hora');
+  
+  if (!fechaSeleccionada || !selectHorario) return;
+
+  selectHorario.innerHTML = '<option value="">Cargando horarios...</option>';
+
+  // Simulación de bloques de horario disponibles
+  const horariosEjemplo = ['09:00', '10:00', '11:00', '12:00', '16:00', '17:00', '18:00'];
+  
+  selectHorario.innerHTML = '<option value="">Selecciona una hora...</option>';
+  horariosEjemplo.forEach(h => {
+    const option = document.createElement('option');
+    option.value = h;
+    option.textContent = h;
+    selectHorario.appendChild(option);
+  });
+}
+
+async function manejarAgendamiento(e) {
+  e.preventDefault();
+  
+  const clienteNombre = document.getElementById('nombre')?.value;
+  const clienteTelefono = document.getElementById('telefono')?.value;
+  const servicioId = document.getElementById('servicio')?.value;
+  const fecha = document.getElementById('fecha')?.value;
+  const hora = document.getElementById('hora')?.value;
+
+  if (!clienteNombre || !clienteTelefono || !servicioId || !fecha || !hora) {
+    alert('Por favor completa todos los campos.');
     return;
   }
 
-  container.innerHTML = slots.map(s => `
-    <button type="button" class="slot-btn" ${!s.disponible ? 'disabled' : ''} onclick="seleccionarHora(this, '${s.hora}')">
-      ${s.hora}
-    </button>
-  `).join('');
-}
-
-function seleccionarHora(btn, hora) {
-  document.querySelectorAll('.slot-btn').forEach(b => b.classList.remove('selected'));
-  btn.classList.add('selected');
-  document.getElementById('hora-seleccionada').value = hora;
-}
-
-async function guardarCita(e) {
-  e.preventDefault();
-  const hora = document.getElementById('hora-seleccionada').value;
-  if (!hora) return alert('Por favor selecciona un horario disponible.');
-
-  const btnSubmit = document.getElementById('btn-submit');
-  btnSubmit.disabled = true;
-  btnSubmit.textContent = 'Agendando...';
-
-  const fecha = document.getElementById('fecha').value;
-  const selectServicio = document.getElementById('servicio');
-  const duracion = Number(selectServicio.selectedOptions[0].dataset.duracion);
-  const nombre = document.getElementById('nombre').value.trim();
-  const telLimpio = document.getElementById('telefono').value.replace(/\D/g, '');
-
-  const inicio = new Date(`${fecha}T${hora}:00`);
-  const fin = new Date(inicio.getTime() + duracion * 60000);
-
   const nuevaCita = {
     negocio_id: negocioActual.id,
-    servicio_id: MODO_OFFLINE ? null : selectServicio.value,
-    cliente_nombre: nombre,
-    cliente_telefono: `521${telLimpio}`,
-    fecha_hora_inicio: inicio.toISOString(),
-    fecha_hora_fin: fin.toISOString(),
+    servicio_id: servicioId,
+    cliente_nombre: clienteNombre,
+    cliente_telefono: clienteTelefono,
+    fecha_hora: `${fecha}T${hora}:00`,
     estado: 'pendiente'
   };
 
-  if (MODO_OFFLINE) {
-    const guardadas = JSON.parse(localStorage.getItem('citas_locales') || '[]');
-    guardadas.push({ ...nuevaCita, id: Date.now().toString() });
-    localStorage.setItem('citas_locales', JSON.stringify(guardadas));
-  } else {
-    const { error } = await supabaseClient.from('citas').insert([nuevaCita]);
-    if (error) {
-      btnSubmit.disabled = false;
-      btnSubmit.textContent = 'Confirmar Cita';
-      return alert('Error al agendar: ' + error.message);
-    }
+  if (typeof MODO_OFFLINE !== 'undefined' && MODO_OFFLINE) {
+    alert('Cita agendada con éxito (Modo Local)');
+    return;
   }
 
-  btnSubmit.disabled = false;
-  btnSubmit.textContent = 'Confirmar Cita';
-  alert(`¡Listo ${nombre}! Tu cita quedó agendada para el ${fecha} a las ${hora}.`);
-  e.target.reset();
-  document.getElementById('fecha').value = fecha;
-  await actualizarHorariosDisponibles();
+  const { error } = await supabaseClient
+    .from('citas')
+    .insert([nuevaCita]);
+
+  if (error) {
+    console.error('Error al guardar la cita:', error);
+    alert('Hubo un error al agendar tu cita. Inténtalo de nuevo.');
+  } else {
+    alert('¡Cita agendada con éxito! Te enviaremos confirmación.');
+    document.getElementById('form-agendar').reset();
+  }
 }

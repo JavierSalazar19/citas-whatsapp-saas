@@ -1,88 +1,85 @@
+// ==========================================
+// MÓDULO DE PANEL ADMINISTRATIVO MULTI-NEGOCIO
+// ==========================================
+
+const urlParamsPanel = new URLSearchParams(window.location.search);
+const negocioSlugPanel = urlParamsPanel.get('negocio') || 'dental-obregon';
+
 let negocioActual = null;
 
 document.addEventListener('DOMContentLoaded', async () => {
-  const hoy = new Date().toISOString().split('T')[0];
-  const inputFiltro = document.getElementById('filtro-fecha');
-  inputFiltro.value = hoy;
-
   await cargarNegocioPanel();
   await cargarCitasPanel();
-
-  inputFiltro.addEventListener('change', cargarCitasPanel);
 });
 
 async function cargarNegocioPanel() {
-  if (MODO_OFFLINE) {
-    negocioActual = { id: NEGOCIO_DEFAULT_ID, nombre: 'Consultorio Dental Obregón (Modo Local)' };
+  if (typeof MODO_OFFLINE !== 'undefined' && MODO_OFFLINE) {
+    negocioActual = { 
+      id: '11111111-1111-1111-1111-111111111111', 
+      nombre: 'Consultorio Dental Obregón (Modo Local)' 
+    };
   } else {
-    const { data } = await supabaseClient.from('negocios').select('*').eq('slug', NEGOCIO_DEFAULT_SLUG).single();
+    const { data, error } = await supabaseClient
+      .from('negocios')
+      .select('*')
+      .eq('slug', negocioSlugPanel)
+      .single();
+    
+    if (error || !data) {
+      alert('Negocio no encontrado para el panel administrativo');
+      return;
+    }
     negocioActual = data;
   }
-  document.getElementById('panel-titulo').textContent = `Panel: ${negocioActual.nombre}`;
+  
+  const panelTitulo = document.getElementById('panel-titulo');
+  if (panelTitulo) {
+    panelTitulo.textContent = `Panel: ${negocioActual.nombre}`;
+  }
 }
 
 async function cargarCitasPanel() {
-  const fecha = document.getElementById('filtro-fecha').value;
-  const container = document.getElementById('citas-container');
-  container.innerHTML = '<p class="subtitle">Buscando citas...</p>';
+  if (!negocioActual) return;
 
-  let citas = [];
-  if (MODO_OFFLINE) {
-    const guardadas = JSON.parse(localStorage.getItem('citas_locales') || '[]');
-    citas = guardadas.filter(c => c.fecha_hora_inicio.startsWith(fecha));
-  } else {
-    const inicioDia = `${fecha}T00:00:00`;
-    const finDia = `${fecha}T23:59:59`;
-    const { data, error } = await supabaseClient
-      .from('citas')
-      .select('*, servicios(nombre)')
-      .eq('negocio_id', negocioActual.id)
-      .gte('fecha_hora_inicio', inicioDia)
-      .lte('fecha_hora_inicio', finDia)
-      .order('fecha_hora_inicio', { ascending: true });
-
-    if (error) {
-      container.innerHTML = `<p class="subtitle" style="color: var(--danger);">Error al cargar citas: ${error.message}</p>`;
-      return;
-    }
-    citas = data || [];
-  }
-
-  if (citas.length === 0) {
-    container.innerHTML = '<p class="subtitle">No hay citas registradas para este día.</p>';
+  if (typeof MODO_OFFLINE !== 'undefined' && MODO_OFFLINE) {
+    console.log('Modo offline: simulando citas del panel');
     return;
   }
 
-  container.innerHTML = citas.map(c => {
-    const horaInicio = new Date(c.fecha_hora_inicio).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-    const servicioNombre = c.servicios?.nombre || 'Servicio General';
-    
-    return `
-      <div class="cita-item">
-        <div>
-          <strong>${horaInicio} - ${c.cliente_nombre}</strong>
-          <p class="subtitle" style="margin: 2px 0 0 0; font-size: 0.85rem;">${servicioNombre} | Tel: ${c.cliente_telefono}</p>
-        </div>
-        <div style="display: flex; align-items: center; gap: 10px;">
-          <span class="badge badge-${c.estado}">${c.estado}</span>
-          <div class="cita-actions">
-            ${c.estado !== 'confirmada' ? `<button onclick="cambiarEstado('${c.id}', 'confirmada')" style="color: var(--success);">Confirmar</button>` : ''}
-            ${c.estado !== 'cancelada' ? `<button onclick="cambiarEstado('${c.id}', 'cancelada')" style="color: var(--danger);">Cancelar</button>` : ''}
-          </div>
-        </div>
-      </div>
-    `;
-  }).join('');
-}
+  const { data, error } = await supabaseClient
+    .from('citas')
+    .select('*, servicios(nombre)')
+    .eq('negocio_id', negocioActual.id)
+    .order('fecha_hora', { ascending: true });
 
-async function cambiarEstado(citaId, nuevoEstado) {
-  if (MODO_OFFLINE) {
-    const guardadas = JSON.parse(localStorage.getItem('citas_locales') || '[]');
-    const actualizadas = guardadas.map(c => c.id === citaId ? { ...c, estado: nuevoEstado } : c);
-    localStorage.setItem('citas_locales', JSON.stringify(actualizadas));
-  } else {
-    const { error } = await supabaseClient.from('citas').update({ estado: nuevoEstado }).eq('id', citaId);
-    if (error) return alert('Error al actualizar: ' + error.message);
+  if (error) {
+    console.error('Error al cargar citas:', error);
+    return;
   }
-  await cargarCitasPanel();
+
+  const contenedorTabla = document.getElementById('lista-citas');
+  if (!contenedorTabla) return;
+
+  contenedorTabla.innerHTML = '';
+  
+  if (!data || data.length === 0) {
+    contenedorTabla.innerHTML = '<tr><td colspan="5">No hay citas registradas para este negocio.</td></tr>';
+    return;
+  }
+
+  data.forEach(cita => {
+    const fila = document.createElement('tr');
+    
+    const fechaFormateada = new Date(cita.fecha_hora).toLocaleString();
+    const servicioNombre = cita.servicios?.nombre || 'Servicio General';
+
+    fila.innerHTML = `
+      <td>${cita.cliente_nombre}</td>
+      <td>${cita.cliente_telefono}</td>
+      <td>${servicioNombre}</td>
+      <td>${fechaFormateada}</td>
+      <td><span class="badge ${cita.estado}">${cita.estado}</span></td>
+    `;
+    contenedorTabla.appendChild(fila);
+  });
 }
