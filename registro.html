@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Registra tu Negocio - Citas SaaS</title>
+  <link rel="stylesheet" href="css/styles.css" />
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+</head>
+<body>
+  <div class="container">
+    <div class="card">
+      <h1>Registra tu Negocio</h1>
+      <p class="subtitle">Crea tu página de citas en segundos y empieza a recibir reservaciones.</p>
+
+      <form id="form-registro">
+        <div class="form-group">
+          <label for="negocio-nombre">1. Nombre de tu negocio</label>
+          <input type="text" id="negocio-nombre" placeholder="Ej. Barbería El Corte" required />
+        </div>
+
+        <div class="form-group">
+          <label for="negocio-slug">2. Enlace personalizado (Slug)</label>
+          <input type="text" id="negocio-slug" placeholder="barberia-el-corte" required />
+          <small style="color: #64748b; display: block; margin-top: 4px;">
+            Tu link será: <strong id="preview-url">.../?negocio=barberia-el-corte</strong>
+          </small>
+        </div>
+
+        <div class="form-group">
+          <label for="negocio-telefono">3. WhatsApp del negocio (10 dígitos)</label>
+          <input type="tel" id="negocio-telefono" placeholder="6441234567" maxlength="10" required />
+        </div>
+
+        <hr style="border: 0; border-top: 1px solid #e2e8f0; margin: 20px 0;" />
+
+        <h3 style="font-size: 1rem; margin-bottom: 10px; color: #1e293b;">Primer servicio a ofrecer</h3>
+        
+        <div class="form-group">
+          <label for="servicio-nombre">Nombre del servicio</label>
+          <input type="text" id="servicio-nombre" placeholder="Ej. Corte de Cabello" required />
+        </div>
+
+        <div style="display: flex; gap: 12px;">
+          <div class="form-group" style="flex: 1;">
+            <label for="servicio-duracion">Duración (minutos)</label>
+            <input type="number" id="servicio-duracion" value="30" min="10" step="5" required />
+          </div>
+          <div class="form-group" style="flex: 1;">
+            <label for="servicio-precio">Precio ($ MXN)</label>
+            <input type="number" id="servicio-precio" value="150" min="0" required />
+          </div>
+        </div>
+
+        <button type="submit" class="btn-primary" id="btn-registrar" style="margin-top: 10px;">Crear mi Plataforma de Citas</button>
+      </form>
+
+      <!-- Contenedor de éxito oculto inicialmente -->
+      <div id="resultado-registro" style="display: none; margin-top: 20px; padding: 16px; background: #ecfdf5; border: 1px solid #10b981; border-radius: 8px;">
+        <h3 style="color: #065f46; margin-top: 0;">¡Tu negocio ya está en línea! 🎉</h3>
+        <p style="color: #047857; font-size: 0.9rem;">Guarda estos dos enlaces para operar tu negocio:</p>
+        
+        <div style="margin: 12px 0;">
+          <strong style="display: block; font-size: 0.85rem; color: #065f46;">🔗 Link público para tus clientes:</strong>
+          <a id="link-cliente" href="#" target="_blank" style="color: #059669; word-break: break-all; font-size: 0.9rem;"></a>
+        </div>
+
+        <div style="margin: 12px 0;">
+          <strong style="display: block; font-size: 0.85rem; color: #065f46;">⚙️ Tu Panel Administrativo:</strong>
+          <a id="link-admin" href="#" target="_blank" style="color: #059669; word-break: break-all; font-size: 0.9rem;"></a>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script src="js/config.js"></script>
+  <script src="js/registro.js"></script>
+</body>
+</html>
