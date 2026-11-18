@@ -37,7 +37,6 @@ async function cargarNegocioPanel() {
     negocioActual = data;
   }
   
-  // Actualizar título y enlace público con el slug correcto
   const panelTitulo = document.getElementById('panel-titulo');
   if (panelTitulo) {
     panelTitulo.textContent = `Panel: ${negocioActual.nombre}`;
@@ -63,7 +62,6 @@ async function cargarCitasPanel() {
     return;
   }
 
-  // Consultar citas del negocio trayendo también el nombre del servicio relacionado
   const { data, error } = await supabaseClient
     .from('citas')
     .select('*, servicios(nombre)')
@@ -88,7 +86,6 @@ function renderizarCitas() {
 
   let citasFiltradas = todasLasCitas;
 
-  // Filtrar por fecha si el usuario seleccionó una en el input
   if (filtroFechaInput) {
     citasFiltradas = todasLasCitas.filter(cita => {
       if (!cita.fecha_hora_inicio) return false;
@@ -106,7 +103,7 @@ function renderizarCitas() {
 
   citasFiltradas.forEach(cita => {
     const card = document.createElement('div');
-    card.className = 'cita-card'; // Estilo limpio para cada tarjeta
+    card.className = 'cita-card';
     card.style.cssText = 'border: 1px solid #e2e8f0; padding: 15px; border-radius: 8px; margin-bottom: 12px; background: #f8fafc;';
 
     const fechaInicio = new Date(cita.fecha_hora_inicio).toLocaleString();
@@ -116,13 +113,34 @@ function renderizarCitas() {
     card.innerHTML = `
       <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
         <strong style="font-size: 1.1rem; color: #1e293b;">${cita.cliente_nombre}</strong>
-        <span class="badge ${estadoClase}" style="padding: 4px 8px; border-radius: 4px; font-size: 0.8rem; text-transform: uppercase; background: #e2e8f0;">${cita.estado}</span>
+        <span class="badge ${estadoClase}" style="padding: 4px 8px; border-radius: 4px; font-size: 0.8rem; text-transform: uppercase; background: #cbd5e1; color: #334155;">${cita.estado}</span>
       </div>
       <p style="margin: 4px 0; color: #475569;">📞 <strong>Teléfono:</strong> ${cita.cliente_telefono}</p>
       <p style="margin: 4px 0; color: #475569;">✂️ <strong>Servicio:</strong> ${servicioNombre}</p>
       <p style="margin: 4px 0; color: #475569;">📅 <strong>Fecha y Hora:</strong> ${fechaInicio}</p>
+      
+      <div style="display: flex; gap: 8px; margin-top: 12px; border-top: 1px solid #e2e8f0; pt-8px; padding-top: 10px;">
+        <button onclick="actualizarEstado('${cita.id}', 'confirmada')" style="background: #10b981; color: white; border: none; padding: 6px 12px; border-radius: 4px; cursor: pointer; font-size: 0.85rem;">Confirmar</button>
+        <button onclick="actualizarEstado('${cita.id}', 'atendida')" style="background: #3b82f6; color: white; border: none; padding: 6px 12px; border-radius: 4px; cursor: pointer; font-size: 0.85rem;">Atendida</button>
+        <button onclick="actualizarEstado('${cita.id}', 'cancelada')" style="background: #ef4444; color: white; border: none; padding: 6px 12px; border-radius: 4px; cursor: pointer; font-size: 0.85rem;">Cancelar</button>
+      </div>
     `;
 
     contenedor.appendChild(card);
   });
+}
+
+async function actualizarEstado(citaId, nuevoEstado) {
+  const { error } = await supabaseClient
+    .from('citas')
+    .update({ estado: nuevoEstado })
+    .eq('id', citaId);
+
+  if (error) {
+    console.error('Error al actualizar el estado:', error);
+    alert('No se pudo actualizar el estado de la cita.');
+  } else {
+    // Recargar las citas en pantalla para reflejar el cambio al instante
+    await cargarCitasPanel();
+  }
 }
