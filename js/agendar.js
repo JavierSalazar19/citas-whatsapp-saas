@@ -83,6 +83,8 @@ async function cargarServicios() {
     serviciosDisponibles.forEach(s => {
       const option = document.createElement('option');
       option.value = s.id;
+      // Guardar la duración en un atributo data para usarla al agendar
+      option.dataset.duracion = s.duracion_minutos || 30;
       option.textContent = `${s.nombre} (${s.duracion_minutos} min)`;
       selectServicio.appendChild(option);
     });
@@ -107,11 +109,8 @@ async function cargarHorarios() {
     btn.className = 'slot-btn';
     btn.textContent = h;
     btn.addEventListener('click', () => {
-      // Remover selección previa
       document.querySelectorAll('.slot-btn').forEach(b => b.classList.remove('selected'));
-      // Seleccionar este botón
       btn.classList.add('selected');
-      // Guardar en el input oculto
       document.getElementById('hora-seleccionada').value = h;
     });
     slotsContainer.appendChild(btn);
@@ -123,7 +122,8 @@ async function manejarAgendamiento(e) {
   
   const clienteNombre = document.getElementById('nombre')?.value;
   const clienteTelefono = document.getElementById('telefono')?.value;
-  const servicioId = document.getElementById('servicio')?.value;
+  const selectServicio = document.getElementById('servicio');
+  const servicioId = selectServicio?.value;
   const fecha = document.getElementById('fecha')?.value;
   const hora = document.getElementById('hora-seleccionada')?.value;
 
@@ -132,12 +132,21 @@ async function manejarAgendamiento(e) {
     return;
   }
 
+  // Obtener la duración en minutos del servicio seleccionado
+  const optionSeleccionada = selectServicio.options[selectServicio.selectedIndex];
+  const duracionMinutos = parseInt(optionSeleccionada.dataset.duracion || '30', 10);
+
+  // Calcular fecha_hora_inicio y fecha_hora_fin
+  const fechaHoraInicioObj = new Date(`${fecha}T${hora}:00`);
+  const fechaHoraFinObj = new Date(fechaHoraInicioObj.getTime() + duracionMinutos * 60000);
+
   const nuevaCita = {
     negocio_id: negocioActual.id,
     servicio_id: servicioId,
     cliente_nombre: clienteNombre,
     cliente_telefono: clienteTelefono,
-    fecha_hora: `${fecha}T${hora}:00`,
+    fecha_hora_inicio: fechaHoraInicioObj.toISOString(),
+    fecha_hora_fin: fechaHoraFinObj.toISOString(),
     estado: 'pendiente'
   };
 
