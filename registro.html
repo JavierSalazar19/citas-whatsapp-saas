@@ -34,25 +34,32 @@
 
         <hr style="border: 0; border-top: 1px solid #e2e8f0; margin: 20px 0;" />
 
-        <h3 style="font-size: 1rem; margin-bottom: 10px; color: #1e293b;">Primer servicio a ofrecer</h3>
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
+          <h3 style="font-size: 1rem; color: #1e293b; margin: 0;">Servicios a ofrecer</h3>
+          <button type="button" id="btn-agregar-servicio" style="background: #0ea5e9; color: white; border: none; padding: 6px 12px; border-radius: 4px; cursor: pointer; font-size: 0.85rem;">+ Agregar servicio</button>
+        </div>
         
-        <div class="form-group">
-          <label for="servicio-nombre">Nombre del servicio</label>
-          <input type="text" id="servicio-nombre" placeholder="Ej. Corte de Cabello" required />
+        <!-- Contenedor dinámico de servicios -->
+        <div id="servicios-container">
+          <div class="servicio-item" style="background: #f8fafc; border: 1px solid #e2e8f0; padding: 12px; border-radius: 6px; margin-bottom: 10px; position: relative;">
+            <div class="form-group" style="margin-bottom: 8px;">
+              <label style="font-size: 0.85rem;">Nombre del servicio</label>
+              <input type="text" class="serv-nombre" placeholder="Ej. Corte Clásico" required />
+            </div>
+            <div style="display: flex; gap: 10px;">
+              <div class="form-group" style="flex: 1; margin-bottom: 0;">
+                <label style="font-size: 0.85rem;">Duración (min)</label>
+                <input type="number" class="serv-duracion" value="30" min="5" step="5" required />
+              </div>
+              <div class="form-group" style="flex: 1; margin-bottom: 0;">
+                <label style="font-size: 0.85rem;">Precio ($ MXN)</label>
+                <input type="number" class="serv-precio" value="150" min="0" required />
+              </div>
+            </div>
+          </div>
         </div>
 
-        <div style="display: flex; gap: 12px;">
-          <div class="form-group" style="flex: 1;">
-            <label for="servicio-duracion">Duración (minutos)</label>
-            <input type="number" id="servicio-duracion" value="30" min="10" step="5" required />
-          </div>
-          <div class="form-group" style="flex: 1;">
-            <label for="servicio-precio">Precio ($ MXN)</label>
-            <input type="number" id="servicio-precio" value="150" min="0" required />
-          </div>
-        </div>
-
-        <button type="submit" class="btn-primary" id="btn-registrar" style="margin-top: 10px;">Crear mi Plataforma de Citas</button>
+        <button type="submit" class="btn-primary" id="btn-registrar" style="margin-top: 15px;">Crear mi Plataforma de Citas</button>
       </form>
 
       <!-- Contenedor de éxito oculto inicialmente -->
