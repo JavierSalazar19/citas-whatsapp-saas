@@ -8,7 +8,6 @@ const negocioSlug = urlParams.get('negocio') || 'dental-obregon'; // Valor por d
 
 let negocioActual = null;
 let serviciosDisponibles = [];
-let horariosDisponibles = [];
 
 document.addEventListener('DOMContentLoaded', async () => {
   await cargarNegocio();
@@ -49,7 +48,7 @@ async function cargarNegocio() {
   }
   
   // Actualizar el título en pantalla con el nombre dinámico del negocio
-  const tituloNegocio = document.querySelector('h1');
+  const tituloNegocio = document.getElementById('negocio-nombre');
   if (tituloNegocio) {
     tituloNegocio.textContent = negocioActual.nombre;
   }
@@ -91,23 +90,31 @@ async function cargarServicios() {
 }
 
 async function cargarHorarios() {
-  // Lógica de disponibilidad de horarios para la fecha seleccionada
   const fechaSeleccionada = document.getElementById('fecha').value;
-  const selectHorario = document.getElementById('hora');
+  const slotsContainer = document.getElementById('slots-container');
   
-  if (!fechaSeleccionada || !selectHorario) return;
+  if (!fechaSeleccionada || !slotsContainer) return;
 
-  selectHorario.innerHTML = '<option value="">Cargando horarios...</option>';
+  slotsContainer.innerHTML = '<p class="subtitle">Cargando horarios...</p>';
 
-  // Simulación de bloques de horario disponibles
+  // Bloques de horario de ejemplo
   const horariosEjemplo = ['09:00', '10:00', '11:00', '12:00', '16:00', '17:00', '18:00'];
   
-  selectHorario.innerHTML = '<option value="">Selecciona una hora...</option>';
+  slotsContainer.innerHTML = '';
   horariosEjemplo.forEach(h => {
-    const option = document.createElement('option');
-    option.value = h;
-    option.textContent = h;
-    selectHorario.appendChild(option);
+    const btn = document.createElement('button');
+    btn.type = 'button';
+    btn.className = 'slot-btn';
+    btn.textContent = h;
+    btn.addEventListener('click', () => {
+      // Remover selección previa
+      document.querySelectorAll('.slot-btn').forEach(b => b.classList.remove('selected'));
+      // Seleccionar este botón
+      btn.classList.add('selected');
+      // Guardar en el input oculto
+      document.getElementById('hora-seleccionada').value = h;
+    });
+    slotsContainer.appendChild(btn);
   });
 }
 
@@ -118,10 +125,10 @@ async function manejarAgendamiento(e) {
   const clienteTelefono = document.getElementById('telefono')?.value;
   const servicioId = document.getElementById('servicio')?.value;
   const fecha = document.getElementById('fecha')?.value;
-  const hora = document.getElementById('hora')?.value;
+  const hora = document.getElementById('hora-seleccionada')?.value;
 
   if (!clienteNombre || !clienteTelefono || !servicioId || !fecha || !hora) {
-    alert('Por favor completa todos los campos.');
+    alert('Por favor completa todos los campos y selecciona un horario.');
     return;
   }
 
@@ -149,5 +156,6 @@ async function manejarAgendamiento(e) {
   } else {
     alert('¡Cita agendada con éxito! Te enviaremos confirmación.');
     document.getElementById('form-agendar').reset();
+    document.getElementById('slots-container').innerHTML = '<p class="subtitle">Selecciona una fecha para ver horarios.</p>';
   }
 }
